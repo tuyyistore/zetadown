@@ -1,0 +1,8 @@
+{
+  "name": "zeta-download",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node src/zeta.js", "test": "node test/run.js" },
+  "engines": { "node": ">=18" }
+}

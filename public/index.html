@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeta Download - Video, Musik & File Downloader</title>
+<meta name="description" content="Zeta Download: unduh video, musik, foto, dan file dari TikTok, YouTube, Instagram, Spotify, MediaFire dan banyak platform lain hanya dengan menempel link.">
+<meta name="author" content="tuyyi">
+<meta property="og:title" content="Zeta Download">
+<meta property="og:description" content="Unduh video, musik, foto, dan file dari banyak platform hanya dengan menempel link.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/style.min.css">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body>
+
+<div class="preloader-overlay" id="preloader">
+  <div class="preloader-content">
+    <div class="brand-wrapper mb-4"><i class="bi bi-cloud-arrow-down-fill brand-icon"></i><h1 class="brand-title">Zeta Download</h1></div>
+    <div class="loader-track"><div class="bar" id="preBar" style="width:0%"></div></div>
+    <span class="loading-text">Loading assets...</span>
+  </div>
+</div>
+
+<nav class="navbar fixed-top py-3" id="mainNavbar">
+  <div class="container px-3">
+    <h1 class="main-title mb-0"><a href="/" class="text-decoration-none" style="color:inherit">Zeta Download</a></h1>
+    <div class="d-flex align-items-center">
+      <div class="d-none d-md-flex align-items-center me-3">
+        <ul class="navbar-nav flex-row">
+          <li class="nav-item"><a class="nav-link px-2" href="#download" data-anchor="download">Download</a></li>
+          <li class="nav-item"><a class="nav-link px-2" href="#features" data-anchor="features">Platform</a></li>
+          <li class="nav-item"><a class="nav-link px-2" href="#faq" data-anchor="faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="themeSwitch" checked>
+        <label class="form-check-label" for="themeSwitch" id="themeLabel">Dark</label>
+      </div>
+      <button class="navbar-toggler fullscreen-toggle-btn d-md-none ms-3" type="button" id="fsBtn" aria-label="Toggle Fullscreen"><i class="bi bi-fullscreen"></i></button>
+      <button class="navbar-toggler d-md-none ms-2" type="button" id="menuBtn" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    </div>
+  </div>
+</nav>
+
+<div class="sidebar-overlay" id="overlay" hidden></div>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">Zeta Download</h5>
+    <button type="button" class="btn-close" id="closeMenu" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <ul class="sidebar-nav">
+      <li><a class="sidebar-link" href="#download" data-anchor="download"><i class="bi bi-cloud-arrow-down-fill"></i><span>Download</span></a></li>
+      <li><a class="sidebar-link" href="#features" data-anchor="features"><i class="bi bi-gem"></i><span>Platform</span></a></li>
+      <li><a class="sidebar-link" href="#faq" data-anchor="faq"><i class="bi bi-question-circle-fill"></i><span>FAQ</span></a></li>
+    </ul>
+    <a href="https://chat.whatsapp.com/FtUufv24bmYJj65jos58C8" class="sidebar-footer mt-auto" target="_blank" rel="noopener noreferrer" aria-label="Gabung grup WhatsApp"><span>Grup WhatsApp</span><i class="bi bi-whatsapp"></i></a>
+  </div>
+</div>
+
+<section id="download" class="container-fluid hero-section py-5">
+  <div class="container px-3 mb-4 content-wrapper">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-md-9 col-lg-7 text-center text-md-start mx-auto mt-3 mb-2">
+        <p class="hero-tagline badge rounded-pill mb-3"><i class="bi bi-cloud-arrow-down-fill me-1"></i> Downloader</p>
+        <h1 class="hero-title fw-bold mb-3">Download Video, Musik &amp; File <br class="d-none d-lg-inline">Cukup Tempel Link</h1>
+        <p class="hero-subtitle lead mb-4">Mendukung <span id="count">20+</span> platform. Platform dikenali otomatis dari link, tanpa daftar dan tanpa ribet.</p>
+
+        <div class="text-center text-md-start">
+          <div class="dl-tabs" role="tablist">
+            <button class="dl-tab active" data-mode="link" type="button" role="tab"><i class="bi bi-link-45deg me-1"></i>Tempel link</button>
+            <button class="dl-tab" data-mode="search" type="button" role="tab"><i class="bi bi-search me-1"></i>Cari judul</button>
+          </div>
+        </div>
+        <form id="form" class="search-form" autocomplete="off">
+          <select id="type" class="form-select type-select" aria-label="Jenis pencarian" hidden></select>
+          <div class="input-group">
+            <i class="bi bi-link-45deg search-icon" id="inputIcon"></i>
+            <input type="text" id="input" class="form-control search-input" placeholder="https://vm.tiktok.com/..." inputmode="url" required aria-label="Link atau kata kunci">
+            <button type="button" class="btn-clear" id="clear" aria-label="Hapus isi kolom" title="Hapus" hidden><i class="bi bi-x-circle-fill"></i></button>
+            <button type="submit" class="btn btn-search" id="go" aria-label="Download"><i class="bi bi-arrow-right"></i></button>
+          </div>
+        </form>
+        <p id="hint"></p>
+      </div>
+      <div class="col-md-5 col-lg-4 d-none d-lg-block text-center">
+        <div class="hero-visual-placeholder"><i class="bi bi-cloud-arrow-down-fill hero-icon"></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container px-3 mb-3 mt-1">
+  <div id="status" aria-live="polite"></div>
+  <div id="results"></div>
+
+  <div class="row mt-4" id="features">
+    <div class="col-12 text-center">
+      <h2 class="main-title mb-3">Platform yang Didukung</h2>
+      <p class="section-subtitle">Semua dalam satu tempat — tempel link, pilih kualitas, lalu download.</p>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4 mb-4"><div class="content-card feature-card h-100 rounded-3 p-4 text-center">
+      <div class="feature-icon-wrapper"><i class="bi bi-camera-video-fill feature-icon text-white"></i></div>
+      <h5 class="feature-title">Video &amp; Foto</h5><p class="feature-description mb-3">Sosial media dan video pendek.</p><div data-cat="video"></div></div></div>
+    <div class="col-12 col-md-6 col-lg-4 mb-4"><div class="content-card feature-card h-100 rounded-3 p-4 text-center">
+      <div class="feature-icon-wrapper"><i class="bi bi-music-note-beamed feature-icon text-white"></i></div>
+      <h5 class="feature-title">Musik</h5><p class="feature-description mb-3">Unduh audio dengan cover &amp; judul.</p><div data-cat="music"></div></div></div>
+    <div class="col-12 col-md-6 col-lg-4 mb-4"><div class="content-card feature-card h-100 rounded-3 p-4 text-center">
+      <div class="feature-icon-wrapper"><i class="bi bi-folder-fill feature-icon text-white"></i></div>
+      <h5 class="feature-title">File</h5><p class="feature-description mb-3">Link file hosting jadi unduhan langsung.</p><div data-cat="file"></div></div></div>
+  </div>
+
+  <div class="row mt-4" id="faq">
+    <div class="col-12 text-center">
+      <h2 class="main-title mb-3">Pertanyaan Umum</h2>
+      <p class="section-subtitle">Jawaban singkat untuk hal yang sering ditanyakan.</p>
+    </div>
+    <div class="col-12 col-md-10 mx-auto">
+      <div class="accordion" id="faqAccordion"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="main-footer">
+  <div class="container px-3">
+    <p class="copyright-text mb-0">&copy; <span id="year"></span> Zeta Download. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="/app.js" type="module"></script>
+</body>
+</html>

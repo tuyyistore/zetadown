@@ -1,0 +1,155 @@
+/* Gaya halaman — diambil dari komponen asli (HeroSection, Feature, Footer, Preloader, MusicSearchModal) */
+body{overflow-x:hidden}
+.hero-section{position:relative;bottom:17px;background-color:var(--dark-card-bg)!important;color:var(--dark-text-color);padding-top:100px;border-bottom:1px solid var(--dark-border-color);overflow:hidden}
+body.light-mode .hero-section{background-color:var(--light-card-bg)!important;color:var(--light-text-color);border-bottom:1px solid var(--light-border-color)}
+.content-wrapper{position:relative;z-index:2}
+.hero-title{font-size:1.7rem;line-height:1.2;color:var(--dark-text-color)}
+body.light-mode .hero-title{color:var(--light-text-color)}
+.hero-subtitle{font-size:1rem;color:var(--dark-secondary-text-color)}
+body.light-mode .hero-subtitle{color:var(--light-text-color);opacity:.9}
+.hero-tagline{font-size:.85rem;font-weight:600;padding:.5rem 1rem;background-color:rgba(0,168,132,.2);color:var(--dark-primary-accent)!important}
+body.light-mode .hero-tagline{background-color:rgba(34,34,34,.1);color:var(--light-primary)!important}
+.hero-visual-placeholder{width:100%;aspect-ratio:1/1;border-radius:1rem;overflow:hidden;display:grid;place-items:center}
+.hero-icon{font-size:9rem;color:var(--dark-primary-accent);animation:floaty 3s ease-in-out infinite}
+body.light-mode .hero-icon{color:var(--light-primary)}
+@keyframes floaty{0%,100%{transform:translateY(-4%)}50%{transform:translateY(4%)}}
+
+/* kotak input (gaya search music asli) */
+.dl-tabs{display:inline-flex;gap:.25rem;padding:.25rem;border:1px solid var(--dark-border-color);border-radius:50px;margin-bottom:1rem}
+body.light-mode .dl-tabs{border-color:var(--light-border-color)}
+.dl-tab{border:0;background:transparent;color:var(--dark-secondary-text-color);font-weight:500;padding:.4rem 1.1rem;border-radius:50px;font-family:inherit}
+.dl-tab.active{background:var(--dark-primary-accent);color:#000;font-weight:600}
+body.light-mode .dl-tab{color:#6c757d}
+body.light-mode .dl-tab.active{background:var(--light-primary);color:#fff}
+.search-form .input-group{position:relative}
+.search-icon{position:absolute;left:1.25rem;top:50%;transform:translateY(-50%);color:var(--dark-secondary-text-color);z-index:6!important}
+body.light-mode .search-icon{color:#6c757d}
+.search-input{position:relative;border-radius:50px!important;padding-left:3rem;padding-right:55px;height:50px;background-color:var(--dark-bg)!important;border-color:var(--dark-border-color)}
+.search-input:focus{z-index:4}
+body.light-mode .search-input{background-color:var(--light-bg)!important;border-color:var(--light-border-color)}
+.search-form .input-group>.btn-search{position:absolute;right:5px;top:50%;transform:translateY(-50%);height:40px;width:40px;border-radius:50%!important;border:none;z-index:6!important;background-color:var(--dark-primary-accent);color:#000;display:grid;place-items:center}
+.btn-search:disabled{opacity:.6}
+body.light-mode .btn-search{background-color:var(--light-primary);color:#fff}
+.type-select{max-width:340px;margin:0 auto .75rem;border-radius:50px;height:44px;padding-left:1.1rem}
+#hint{min-height:1.4rem;font-size:.85rem;color:var(--dark-secondary-text-color);margin:.5rem 0 0}
+
+/* hasil */
+.song-card{display:flex;align-items:center;gap:1rem;background-color:var(--dark-bg);border:1px solid var(--dark-border-color);padding:.75rem;border-radius:.5rem;cursor:pointer;transition:background-color .2s ease}
+.song-card:hover{background-color:var(--dark-border-color)}
+body.light-mode .song-card{background-color:var(--light-bg);border-color:var(--light-border-color)}
+body.light-mode .song-card:hover{background-color:#e9ecef}
+.thumbnail-wrapper{position:relative;flex-shrink:0;width:50px;height:50px;border-radius:.375rem;overflow:hidden;background:var(--dark-border-color);display:grid;place-items:center}
+.song-thumbnail{width:100%;height:100%;object-fit:cover}
+.song-info{flex-grow:1;overflow:hidden;min-width:0}
+.song-title{font-weight:600;color:var(--dark-text-color);margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.95rem}
+body.light-mode .song-title{color:var(--light-text-color)}
+.song-meta{display:flex;gap:.75rem;font-size:.8rem;color:var(--dark-secondary-text-color)}
+body.light-mode .song-meta{color:#6c757d}
+.result-card .cover{width:100%;aspect-ratio:1;object-fit:cover;border-radius:.5rem;background:var(--dark-bg)}
+body.light-mode .result-card .cover{background:var(--light-bg)}
+.result-title{font-weight:600;font-size:1.15rem;overflow-wrap:anywhere;margin-bottom:.15rem}
+.result-meta{display:flex;flex-wrap:wrap;gap:.25rem 1rem;font-size:.85rem;color:var(--dark-secondary-text-color);margin-bottom:1rem}
+.file-row{display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;border:1px solid var(--dark-border-color);border-radius:.5rem;background:var(--dark-bg)}
+body.light-mode .file-row{border-color:var(--light-border-color);background:var(--light-bg)}
+.file-row .lbl{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
+.file-row small{color:var(--dark-secondary-text-color);margin-left:.4rem}
+.player{width:100%;margin-top:.5rem;border-radius:.5rem;max-height:340px;background:#000}
+audio.player{background:none;height:40px}
+.btn-sm-custom{padding:.3rem .8rem;font-size:.85rem}
+
+/* fitur / platform */
+.feature-card .feature-icon-wrapper{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;margin-bottom:1.5rem;background-color:var(--dark-primary-accent)}
+body.light-mode .feature-card .feature-icon-wrapper{background-color:var(--light-primary)}
+.feature-card .feature-icon{font-size:1.75rem;line-height:1}
+.feature-card{transition:transform .2s,box-shadow .2s;border:1px solid var(--dark-border-color)}
+body.light-mode .feature-card{border:1px solid var(--light-border-color)}
+.section-subtitle{font-size:1.1rem;color:var(--dark-secondary-text-color);max-width:650px;margin-left:auto;margin-right:auto;margin-bottom:2.5rem}
+body.light-mode .section-subtitle{color:#6c757d}
+.feature-title{font-weight:600;font-size:1.25rem;margin-bottom:.5rem}
+.feature-description{color:var(--dark-secondary-text-color);font-size:.9rem;margin-bottom:0}
+body.light-mode .feature-description{color:var(--light-text-color);opacity:.8}
+.feature-card:hover{transform:translateY(-5px);box-shadow:0 4px 15px rgba(0,0,0,.15)}
+body.light-mode .feature-card:hover{box-shadow:0 4px 15px rgba(0,0,0,.05)}
+.platform-pill{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .9rem;border-radius:50px;border:1px solid var(--dark-border-color);background:var(--dark-card-bg);font-size:.9rem;margin:.25rem}
+body.light-mode .platform-pill{border-color:var(--light-border-color);background:var(--light-card-bg)}
+.accordion-collapse.collapse:not(.show){display:none}
+
+/* footer */
+.main-footer{margin-top:3rem;padding:1.25rem 0 calc(1.25rem + env(safe-area-inset-bottom,0px));text-align:center;background-color:var(--dark-card-bg);border-top:1px solid var(--dark-border-color);color:var(--dark-secondary-text-color);transition:background-color .3s,border-top .3s,color .3s}
+body.light-mode .main-footer{background-color:var(--light-card-bg);border-top:1px solid var(--light-border-color);color:#6c757d}
+.copyright-text{font-size:.9rem;line-height:1.5;margin:0}
+body.light-mode body.light-mode body{padding-bottom:1px}
+
+/* preloader */
+.preloader-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--dark-bg);z-index:9999;display:flex;justify-content:center;align-items:center;flex-direction:column;transition:opacity .5s ease,transform .5s ease}
+body.light-mode .preloader-overlay{background-color:var(--light-bg)}
+.preloader-overlay.hide{opacity:0;transform:scale(1.05);pointer-events:none}
+.preloader-content{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:300px}
+.brand-wrapper{display:flex;align-items:center;gap:10px;animation:pulse 2s infinite ease-in-out}
+.brand-icon{font-size:1.5rem;color:var(--dark-primary-accent);animation:wave 1.5s infinite ease-in-out}
+.brand-title{font-size:1.5rem;font-weight:700;margin:0;color:var(--dark-text-color);letter-spacing:1px}
+body.light-mode .brand-icon{color:var(--light-primary)}
+body.light-mode .brand-title{color:var(--light-text-color)}
+.loader-track{width:100%;height:4px;background-color:var(--dark-border-color);border-radius:4px;overflow:hidden;position:relative}
+body.light-mode .loader-track{background-color:var(--light-border-color)}
+.loader-track .bar{position:absolute;top:0;left:0;height:100%;border-radius:4px;background-color:var(--dark-primary-accent);transition:width .1s linear}
+body.light-mode .loader-track .bar{background-color:var(--light-primary)}
+.loading-text{font-size:.85rem;color:var(--dark-secondary-text-color);margin-top:.75rem}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.8;transform:scale(.98)}}
+@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+
+/* loader garis (dari music.css) */
+.line-loader-wrapper{padding:1rem 0}
+.line-loader{position:relative;width:250px;max-width:80%;height:4px;border-radius:2px;background-color:var(--dark-border-color);overflow:hidden;margin:0 auto}
+body.light-mode .line-loader{background-color:var(--light-border-color)}
+.line-loader::before{content:'';position:absolute;top:0;left:0;width:100px;height:100%;background-color:var(--dark-primary-accent);border-radius:2px;animation:2s ease-in-out infinite ping-pong-effect}
+body.light-mode .line-loader::before{background-color:var(--light-primary)}
+@keyframes ping-pong-effect{0%,100%{transform:translateX(0)}50%{transform:translateX(150px)}}
+.animate-bounce-btn{animation:bounceBtn 2s infinite ease-in-out}
+@keyframes bounceBtn{0%,100%{transform:translateY(-5%)}50%{transform:translateY(5%)}}
+
+.btn-ghost{background:transparent;border:1px solid var(--dark-border-color);color:var(--dark-text-color);font-weight:500}
+.btn-ghost:hover{background:var(--dark-border-color);color:var(--dark-text-color)}
+body.light-mode .btn-ghost{border-color:var(--light-border-color);color:var(--light-text-color)}
+body.light-mode .btn-ghost:hover{background:#e9ecef;color:var(--light-text-color)}
+
+/* ===== Perbaikan UI mobile ===== */
+/* 1) Navbar tidak boleh turun ke 2 baris (judul + kontrol dipaksa muat 1 baris) */
+#mainNavbar>.container{flex-wrap:nowrap;gap:.5rem}
+#mainNavbar .main-title{flex:1 1 auto;min-width:0;font-size:clamp(1.05rem,5.2vw,1.5rem);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mainNavbar>.container>.d-flex{flex:0 0 auto}
+@media (max-width:420px){
+  #mainNavbar .navbar-toggler{width:36px;height:36px}
+  #mainNavbar #fsBtn{margin-left:.5rem!important}
+  #mainNavbar #menuBtn{margin-left:.35rem!important}
+}
+@media (max-width:340px){#mainNavbar #fsBtn{display:none!important}}
+
+/* 2) Navbar fixed: jangan menutupi konten saat scroll ke anchor / hasil */
+html{scroll-padding-top:84px}
+#status,#results,#features,#faq{scroll-margin-top:84px}
+
+/* 3) Hero: hapus offset -17px & kurangi ruang kosong di bawah kolom input (mobile) */
+.hero-section{bottom:0;padding-top:84px}
+@media (max-width:575.98px){
+  .hero-section{padding-bottom:1.25rem!important}
+  .hero-section .content-wrapper{margin-bottom:.25rem!important}
+  #hint{min-height:1.1rem}
+}
+
+/* Sidebar mobile: tombol WhatsApp */
+.sidebar-footer .bi-whatsapp{color:#25d366}
+#mobileSidebar .offcanvas-body{padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))}
+
+/* Tombol hapus (x) di kolom input */
+.search-form .input-group>.btn-clear{position:absolute;right:49px;top:50%;transform:translateY(-50%);z-index:6;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dark-secondary-text-color);font-size:1.2rem;line-height:1;display:grid;place-items:center;cursor:pointer}
+.search-form .input-group>.btn-clear[hidden]{display:none}
+.btn-clear:hover,.btn-clear:focus-visible{color:var(--dark-text-color);outline:0}
+body.light-mode .btn-clear{color:#6c757d}
+body.light-mode .btn-clear:hover,body.light-mode .btn-clear:focus-visible{color:var(--light-text-color)}
+.search-form.has-text .search-input{padding-right:90px}
+
+/* Tombol salin deskripsi */
+.btn-copy{margin:.5rem 0 1rem}
+.btn-copy.copied{border-color:var(--dark-primary-accent);color:var(--dark-primary-accent)}
+body.light-mode .btn-copy.copied{border-color:var(--light-primary);color:var(--light-primary)}
