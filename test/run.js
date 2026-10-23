@@ -14,6 +14,8 @@ let lastRef = ''
 const fileHost = http.createServer((req, res) => {
   lastRef = req.headers.referer || ''
   if (req.url.startsWith('/deny')) { res.writeHead(403); return res.end() }
+  if (req.url.startsWith('/cut')) { res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': 1000 }); res.write(Buffer.alloc(100)); return setTimeout(() => res.socket.destroy(), 50) }
+  if (req.url.startsWith('/slow')) { res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': 1000 }); res.write(Buffer.alloc(500)); return setTimeout(() => res.end(Buffer.alloc(500)), 400) }
   const r = req.headers.range?.match(/bytes=(\d+)-(\d*)/)
   if (r) { const s = +r[1], e = r[2] ? +r[2] : BODY.length - 1; res.writeHead(206, { 'content-type': 'video/mp4', 'content-range': `bytes ${s}-${e}/${BODY.length}`, 'content-length': e - s + 1, 'x-ref': req.headers.referer || '' }); return res.end(BODY.subarray(s, e + 1)) }
   res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': BODY.length, 'x-ref': req.headers.referer || '' }); res.end(BODY)
@@ -212,45 +214,67 @@ assert.equal((await fetch(RB + '/api/file?t=bad', { redirect: 'manual' })).statu
   assert.equal(dayKey(Date.UTC(2026, 9, 23, 18, 0), 'UTC'), '2026-10-23')
   assert.equal(dayKey(Date.UTC(2026, 9, 23, 18, 0), 'Zona/Salah'), '2026-10-23')
 
-  // summarize: minggu mulai Senin, bulan mulai tgl 1
-  const all = { 'u:2026-10-19': 1, 'u:2026-10-22': 2, 'u:2026-10-23': 4, 'u:2026-10-18': 100, 'u:2026-09-30': 50, 'u:total': 157, 'd:2026-10-23': 3, 'd:total': 9 }
-  const s1 = summarize(all, '2026-10-23') // Jumat
-  assert.deepEqual(s1.usage, { today: 4, week: 7, month: 107, total: 157 })
-  assert.deepEqual(s1.downloads, { today: 3, week: 3, month: 3, total: 9 })
-  assert.equal(s1.daily.length, 14); assert.equal(s1.daily[0].date, '2026-10-10'); assert.equal(s1.daily.at(-1).date, '2026-10-23')
-  assert.equal(s1.since, '2026-09-30')
-  const s2 = summarize({ 'u:2026-10-26': 5, 'u:2026-10-31': 2, 'u:2026-11-01': 1 }, '2026-11-01') // Minggu: pekan lintas bulan
-  assert.equal(s2.usage.week, 8); assert.equal(s2.usage.month, 1)
+  // summarize: total keseluruhan + 2 garis kumulatif (titik terakhir = total)
+  const all = { 'u:2026-10-21': 1, 'u:2026-10-22': 2, 'u:2026-10-23': 4, 'u:total': 157, 'd:2026-10-23': 3, 'd:total': 9 }
+  const s1 = summarize(all, '2026-10-23', { days: 3 })
+  assert.equal(s1.users, 157); assert.equal(s1.downloads, 9)
+  assert.deepEqual(s1.series, [
+    { date: '2026-10-21', users: 151, downloads: 6 },
+    { date: '2026-10-22', users: 153, downloads: 6 },
+    { date: '2026-10-23', users: 157, downloads: 9 }
+  ])
+  assert.equal(s1.since, '2026-10-21')
+  const s2 = summarize(all, '2026-10-23') // default 30 hari, lintas bulan
+  assert.equal(s2.series.length, 30); assert.equal(s2.series[0].date, '2026-09-24'); assert.deepEqual(s2.series.at(-1), { date: '2026-10-23', users: 157, downloads: 9 })
+  assert.ok(s2.series.every((d, i, a) => !i || (d.users >= a[i - 1].users && d.downloads >= a[i - 1].downloads))) // garis tidak pernah turun
   assert.equal(summarize({}, '2026-10-23').since, null)
-  ok('statistik: zona waktu, minggu (Senin) & bulan, lintas bulan')
+  assert.ok(summarize({ 'u:2026-10-23': 5 }, '2026-10-23').series.every(d => d.users >= 0)) // data tak konsisten tidak menghasilkan angka negatif
+  assert.ok(!('week' in s1) && !('today' in s1)) // tidak ada harian/mingguan/bulanan
+  ok('statistik: zona waktu, total + garis kumulatif (pengguna & download sukses)')
 
   // integrasi server (jam tetap 12:00 WIB)
   const st = createStats({ store: memoryStore(), now: () => Date.UTC(2026, 9, 23, 5, 0) })
   const sv = buildServer({ apiFn, secret: SECRET, limit: 1000, stats: st }); await new Promise(r => sv.listen(0, r))
   const SB = `http://127.0.0.1:${sv.address().port}`
   const stat = async () => (await fetch(SB + '/api/stats')).json()
+  const settle = ms => new Promise(r => setTimeout(r, ms))
   const t0 = await stat()
-  assert.equal(t0.status, true); assert.equal(t0.usage.total, 0); assert.equal(t0.storage, 'memory'); assert.equal(t0.persistent, false); assert.equal(t0.tz, 'Asia/Jakarta')
+  assert.equal(t0.status, true); assert.equal(t0.users, 0); assert.equal(t0.downloads, 0); assert.equal(t0.storage, 'memory'); assert.equal(t0.persistent, false); assert.equal(t0.tz, 'Asia/Jakarta')
   const rs = await (await fetch(SB + '/api/resolve?url=' + encodeURIComponent('https://vm.tiktok.com/ZS/'))).json()
   const dl = SB + rs.data.items[0].download
-  assert.equal((await stat()).usage.today, 1)
+  assert.equal((await stat()).users, 1)
   assert.equal((await fetch(SB + '/api/resolve?url=' + encodeURIComponent('https://drive.google.com/file/d/1/view'))).status, 502)
-  assert.equal((await stat()).usage.total, 1) // resolve gagal tidak dihitung
+  assert.equal((await stat()).users, 1) // resolve gagal tidak dihitung
   await (await fetch(dl)).arrayBuffer()
-  assert.equal((await stat()).downloads.today, 1) // download biasa dihitung
+  assert.equal((await stat()).downloads, 1) // download selesai dihitung
   await (await fetch(dl + '&inline=1')).arrayBuffer() // preview
   await (await fetch(dl, { headers: { range: 'bytes=5-' } })).arrayBuffer() // lanjutan Range
   await fetch(dl, { method: 'HEAD' })
   await fetch(SB + '/api/file?t=bad')
-  assert.equal((await stat()).downloads.total, 1) // semuanya tidak dihitung
+  await settle(100)
+  assert.equal((await stat()).downloads, 1) // semuanya tidak dihitung
+
+  // hanya download SUKSES: sumber menolak / putus di tengah / dibatalkan pengguna tidak dihitung
+  const link = u => `${SB}/api/file?t=${sign(SECRET, { u, n: 'x.mp4', e: Date.now() + 1e5 })}`
+  await fetch(link(`${F}/deny`)) // sumber menolak (502)
+  await fetch(link(`${F}/cut`)).then(r => r.arrayBuffer()).catch(() => {}) // sumber putus saat mengirim
+  { const r = await fetch(link(`${F}/slow`)); const rd = r.body.getReader(); await rd.read(); await rd.cancel() } // pengguna membatalkan
+  await settle(700)
+  assert.equal((await stat()).downloads, 1)
+  await (await fetch(link(`${F}/slow`))).arrayBuffer() // yang lambat tapi selesai → dihitung
+  await settle(100)
+  assert.equal((await stat()).downloads, 2)
   await (await fetch(dl, { headers: { range: 'bytes=0-' } })).arrayBuffer() // Range dari awal = unduhan normal
+  await settle(100)
   const t1 = await stat()
-  assert.equal(t1.downloads.week, 2); assert.equal(t1.usage.month, 1); assert.equal(t1.daily.at(-1).dl, 2); assert.equal(t1.daily.at(-1).use, 1)
+  assert.equal(t1.downloads, 3); assert.equal(t1.users, 1)
+  assert.deepEqual(t1.series.at(-1), { date: '2026-10-23', users: 1, downloads: 3 }); assert.equal(t1.series.length, 30)
+  assert.deepEqual(t1.series.at(-2), { date: '2026-10-22', users: 0, downloads: 0 })
   assert.ok(!JSON.stringify(t1).includes('apikey') && !JSON.stringify(t1).includes('http'))
   const sr = buildServer({ apiFn, secret: SECRET, limit: 1000, fileMode: 'redirect', stats: st }); await new Promise(r => sr.listen(0, r))
   assert.equal((await fetch(`http://127.0.0.1:${sr.address().port}` + rs.data.items[0].download, { redirect: 'manual' })).status, 302)
-  assert.equal((await stat()).downloads.total, 3) // mode redirect ikut dihitung
-  ok('statistik: /api/stats — hanya resolve sukses & download asli yang dihitung')
+  assert.equal((await stat()).downloads, 4) // mode redirect: dihitung saat diteruskan ke sumber
+  ok('statistik: /api/stats — hanya resolve sukses & download yang selesai dikirim yang dihitung')
 
   // Redis REST (fetch tiruan): bentuk request + parsing HGETALL
   const reqs = []
@@ -264,7 +288,7 @@ assert.equal((await fetch(RB + '/api/file?t=bad', { redirect: 'manual' })).statu
   assert.deepEqual(reqs[0][2], [['HINCRBY', 'zeta:stats', 'u:2026-10-23', 1], ['HINCRBY', 'zeta:stats', 'u:total', 1]])
   const rr2 = await rst.read()
   assert.equal(reqs[1][0], 'https://x.upstash.io'); assert.deepEqual(reqs[1][2], ['HGETALL', 'zeta:stats'])
-  assert.equal(rr2.usage.today, 3); assert.equal(rr2.usage.total, 10); assert.equal(rr2.storage, 'redis'); assert.equal(rr2.persistent, true)
+  assert.equal(rr2.users, 10); assert.deepEqual(rr2.series.at(-1), { date: '2026-10-23', users: 10, downloads: 0 }); assert.equal(rr2.series.at(-2).users, 7); assert.equal(rr2.storage, 'redis'); assert.equal(rr2.persistent, true)
   // Redis error: hit() tidak melempar (statistik tak boleh merusak aplikasi), read() melempar → API 503
   const bad = createStats({ store: redisStore({ url: 'https://x', token: 't', fetchImpl: async () => ({ ok: false, status: 500, json: async () => ({ error: 'ERR boom' }) }) }) })
   const quiet = console.error; console.error = () => {}

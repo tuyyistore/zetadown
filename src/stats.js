@@ -2,9 +2,9 @@
 // Penyimpanan: Upstash Redis (REST) bila env tersedia → file JSON (VPS) → memori (Vercel tanpa Redis, tidak permanen).
 //
 // Data disimpan sebagai counter harian + total:
-//   u:YYYY-MM-DD  jumlah penggunaan (link/judul berhasil diproses)   u:total
-//   d:YYYY-MM-DD  jumlah download (klik download, bukan preview)     d:total
-// Mingguan/bulanan dihitung saat dibaca dari counter harian.
+//   u:YYYY-MM-DD  jumlah pengguna (link/judul berhasil diproses)     u:total
+//   d:YYYY-MM-DD  jumlah download sukses (bukan preview)             d:total
+// Yang ditampilkan hanya total keseluruhan + 2 garis (pertumbuhan total per hari); counter harian dipakai untuk menggambar garis.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,19 +20,21 @@ export function dayKey(ts = Date.now(), tz = 'Asia/Jakarta') {
 const shift = (key, n) => { const d = new Date(`${key}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
 
 // ---------- agregasi ----------
-// today: kunci tanggal hari ini. Minggu = Senin..hari ini, bulan = tanggal 1..hari ini.
-export function summarize(all, today, { days = 14 } = {}) {
+// today: kunci tanggal hari ini. Hasil: total keseluruhan + 2 garis kumulatif (pengguna & download sukses)
+// untuk `days` hari terakhir. Nilai garis di tiap hari = total sampai akhir hari itu, jadi titik terakhir = total.
+export function summarize(all, today, { days = 30 } = {}) {
   const n = k => Number(all[k]) || 0
-  const dow = new Date(`${today}T00:00:00Z`).getUTCDay() // 0 = Minggu
-  const weekStart = shift(today, -((dow + 6) % 7))
-  const monthStart = `${today.slice(0, 8)}01`
-  const sum = (t, from) => { let s = 0; for (let k = from; k <= today; k = shift(k, 1)) s += n(`${t}:${k}`); return s }
-  const block = t => ({ today: n(`${t}:${today}`), week: sum(t, weekStart), month: sum(t, monthStart), total: n(`${t}:total`) })
-  const daily = []
-  for (let i = days - 1; i >= 0; i--) { const date = shift(today, -i); daily.push({ date, use: n(`u:${date}`), dl: n(`d:${date}`) }) }
+  let users = n('u:total'), downloads = n('d:total')
+  const totals = { users, downloads }
+  const series = []
+  for (let i = 0; i < days; i++) {
+    const date = shift(today, -i)
+    series.unshift({ date, users, downloads })
+    users = Math.max(0, users - n(`u:${date}`)); downloads = Math.max(0, downloads - n(`d:${date}`))
+  }
   let since = null
   for (const k of Object.keys(all)) { const m = k.match(DAY); if (m && (!since || m[1] < since)) since = m[1] }
-  return { usage: block('u'), downloads: block('d'), daily, since }
+  return { ...totals, series, since }
 }
 
 // ---------- penyimpanan ----------
@@ -102,7 +104,7 @@ export function createStats({ store, tz = 'Asia/Jakarta', now = () => Date.now()
   store ||= createStore()
   return {
     store,
-    // type: 'u' (penggunaan) | 'd' (download). Tidak pernah melempar error — statistik tidak boleh merusak aplikasi.
+    // type: 'u' (pengguna) | 'd' (download sukses). Tidak pernah melempar error — statistik tidak boleh merusak aplikasi.
     async hit(type) {
       try { await store.incr([`${type}:${dayKey(now(), tz)}`, `${type}:total`]) }
       catch (e) { console.error('[stats] gagal mencatat:', e.message) }

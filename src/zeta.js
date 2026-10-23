@@ -100,8 +100,10 @@ export function buildServer({ apiFn, stats, fetchImpl = fetch, secret = SECRET, 
       const p = verify(secret, q.get('t'))
       if (!p) return json(res, 403, { status: false, msg: 'Link kedaluwarsa, ulangi proses.' })
       const range = req.headers.range
-      if (!q.get('inline') && req.method === 'GET' && (!range || /^bytes=0-/.test(range))) await stats.hit('d')
-      if (fileMode === 'redirect') { res.writeHead(302, { location: p.u, 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer' }); return res.end() }
+      // kandidat hitungan: unduhan asli saja (bukan preview, HEAD, atau lanjutan Range)
+      const countable = !q.get('inline') && req.method === 'GET' && (!range || /^bytes=0-/.test(range))
+      // mode redirect: selesai-tidaknya unduhan terjadi di server sumber dan tidak bisa dipantau, jadi dihitung saat diteruskan
+      if (fileMode === 'redirect') { if (countable) await stats.hit('d'); res.writeHead(302, { location: p.u, 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer' }); return res.end() }
       const headers = { 'user-agent': 'Mozilla/5.0' }
       if (p.r) headers.referer = p.r
       if (req.headers.range) headers.range = req.headers.range
@@ -111,8 +113,12 @@ export function buildServer({ apiFn, stats, fetchImpl = fetch, secret = SECRET, 
       for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) if (up.headers.get(h)) out[h] = up.headers.get(h)
       res.writeHead(up.status, out)
       const stream = Readable.fromWeb(up.body)
+      let complete = false, failed = false
+      stream.on('end', () => { complete = true })
       res.on('close', () => stream.destroy())
-      stream.on('error', () => res.end())
+      stream.on('error', () => { failed = true; res.end() })
+      // download sukses = seluruh isi sudah terkirim; dibatalkan pengguna atau putus di tengah tidak dihitung
+      if (countable) res.on('finish', () => { if (complete && !failed) stats.hit('d') })
       return stream.pipe(res)
     }
     return json(res, 404, { status: false, msg: 'Not found' })

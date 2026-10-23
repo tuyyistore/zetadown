@@ -32,7 +32,7 @@ Perbedaan di Vercel: unduhan memakai mode `redirect` (302 langsung ke server sum
 | `/api/resolve?service=play&q=` | cari judul → MP3 (`video` → MP4) |
 | `/api/search?type=spotify\|soundcloud\|applemusic\|apk&q=` | daftar hasil; pilih → `/api/resolve?service=…` |
 | `/api/file?t=` | stream/unduh file |
-| `/api/stats` | statistik penggunaan & download (harian, mingguan, bulanan, total) |
+| `/api/stats` | total pengguna & download sukses + 2 garis (total kumulatif 30 hari terakhir) |
 
 ## Menambah platform
 Tambah entri di `SERVICES` pada `src/core.js` (`detect`, `call`, `map`).
@@ -46,10 +46,10 @@ Tambah entri di `SERVICES` pada `src/core.js` (`detect`, `call`, `map`).
 - **"API_KEY belum diisi"** — isi `API_KEY` di *Settings → Environment Variables* lalu **redeploy** (perubahan env tidak berlaku ke deployment lama).
 
 ## Statistik
-Ditampilkan di bagian **Statistik** pada halaman (muncul otomatis bila `/api/stats` berhasil).
-- **Penggunaan** = link/judul yang berhasil diproses (`/api/resolve` sukses; yang gagal tidak dihitung).
-- **Download** = tombol *Download* ditekan (`/api/file` tanpa `inline`). Preview/Putar, request `HEAD`, dan lanjutan `Range` tidak dihitung. Yang dihitung adalah permintaan unduhan, bukan jaminan file selesai terunduh.
-- **Hari ini** = tanggal berjalan, **Minggu ini** = Senin s/d hari ini, **Bulan ini** = tanggal 1 s/d hari ini, semuanya menurut `STATS_TZ` (default `Asia/Jakarta`). Ada juga total sejak pertama dicatat dan grafik 14 hari.
+Ditampilkan di paling bawah halaman, tepat di atas footer (muncul otomatis bila `/api/stats` berhasil, tidak ada tombol di menu). Isinya 2 angka total dan 2 garis: **Pengguna** dan **Download sukses**. Arahkan kursor / sentuh garis untuk melihat angka per tanggal. Tidak ada rincian harian/mingguan/bulanan, hanya total keseluruhan.
+- **Pengguna** = link/judul yang berhasil diproses (`/api/resolve` sukses; yang gagal tidak dihitung).
+- **Download sukses** = tombol *Download* ditekan **dan** file terkirim sampai habis. Preview/Putar, `HEAD`, lanjutan `Range`, sumber yang menolak, koneksi putus di tengah, dan unduhan yang dibatalkan pengguna tidak dihitung. Di mode `redirect` (Vercel) file diunduh langsung dari server sumber sehingga selesai-tidaknya tidak bisa dipantau; di sana dihitung saat unduhan diteruskan ke sumber.
+- Garis = total kumulatif per hari (zona waktu `STATS_TZ`, default `Asia/Jakarta`), titik terakhir sama dengan angka total.
 - Yang disimpan hanya angka (counter per hari). Tidak ada IP, link, atau data pengguna.
 
 **Penyimpanan** (otomatis dipilih):

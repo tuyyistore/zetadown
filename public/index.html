@@ -31,7 +31,6 @@
       <div class="d-none d-md-flex align-items-center me-3">
         <ul class="navbar-nav flex-row">
           <li class="nav-item"><a class="nav-link px-2" href="#download" data-anchor="download">Download</a></li>
-          <li class="nav-item" hidden><a class="nav-link px-2" href="#stats" data-anchor="stats">Statistik</a></li>
           <li class="nav-item"><a class="nav-link px-2" href="#features" data-anchor="features">Platform</a></li>
           <li class="nav-item"><a class="nav-link px-2" href="#faq" data-anchor="faq">FAQ</a></li>
         </ul>
@@ -55,7 +54,6 @@
   <div class="offcanvas-body">
     <ul class="sidebar-nav">
       <li><a class="sidebar-link" href="#download" data-anchor="download"><i class="bi bi-cloud-arrow-down-fill"></i><span>Download</span></a></li>
-      <li hidden><a class="sidebar-link" href="#stats" data-anchor="stats"><i class="bi bi-bar-chart-fill"></i><span>Statistik</span></a></li>
       <li><a class="sidebar-link" href="#features" data-anchor="features"><i class="bi bi-gem"></i><span>Platform</span></a></li>
       <li><a class="sidebar-link" href="#faq" data-anchor="faq"><i class="bi bi-question-circle-fill"></i><span>FAQ</span></a></li>
     </ul>
@@ -99,29 +97,6 @@
   <div id="status" aria-live="polite"></div>
   <div id="results"></div>
 
-  <div class="row mt-4" id="stats" hidden>
-    <div class="col-12 text-center">
-      <h2 class="main-title mb-3">Statistik</h2>
-      <p class="section-subtitle">Jumlah penggunaan dan download — harian, mingguan, bulanan, dan total.</p>
-    </div>
-    <div class="col-12 col-md-6 mb-3"><div class="content-card stat-card rounded-3 p-3 h-100">
-      <div class="stat-head"><span class="stat-ico"><i class="bi bi-lightning-charge-fill text-white"></i></span>Penggunaan</div>
-      <div class="stat-grid" data-stat="usage"></div>
-    </div></div>
-    <div class="col-12 col-md-6 mb-3"><div class="content-card stat-card rounded-3 p-3 h-100">
-      <div class="stat-head"><span class="stat-ico"><i class="bi bi-download text-white"></i></span>Download</div>
-      <div class="stat-grid" data-stat="downloads"></div>
-    </div></div>
-    <div class="col-12 mb-4"><div class="content-card stat-card rounded-3 p-3">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div class="stat-head mb-0">14 hari terakhir</div>
-        <div class="stat-legend"><span><i class="dot u"></i>Penggunaan</span><span><i class="dot d"></i>Download</span></div>
-      </div>
-      <div class="sbars" id="statBars"></div>
-      <p class="stat-note" id="statNote"></p>
-    </div></div>
-  </div>
-
   <div class="row mt-4" id="features">
     <div class="col-12 text-center">
       <h2 class="main-title mb-3">Platform yang Didukung</h2>
@@ -145,6 +120,23 @@
     </div>
     <div class="col-12 col-md-10 mx-auto">
       <div class="accordion" id="faqAccordion"></div>
+    </div>
+  </div>
+
+  <div class="row mt-4" id="stats" hidden>
+    <div class="col-12 text-center">
+      <h2 class="main-title mb-3">Statistik</h2>
+    </div>
+    <div class="col-12 col-md-10 col-lg-8 mx-auto">
+      <div class="content-card stat-card rounded-3 p-3 p-md-4">
+        <div class="stat-totals">
+          <div class="stat-total"><i class="dot u"></i><div><div class="v" id="statUsers">0</div><div class="l">Pengguna</div></div></div>
+          <div class="stat-total"><i class="dot d"></i><div><div class="v" id="statDl">0</div><div class="l">Download sukses</div></div></div>
+        </div>
+        <div class="stat-chart" id="statChart"></div>
+        <div class="stat-readout" id="statReadout"></div>
+        <p class="stat-note" id="statNote"></p>
+      </div>
     </div>
   </div>
 </div>
