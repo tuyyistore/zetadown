@@ -10,6 +10,11 @@
 <meta property="og:description" content="Unduh video, musik, foto, dan file dari banyak platform hanya dengan menempel link.">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0b141a">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<script>addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__bip=e})</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/style.min.css">
 <link rel="stylesheet" href="/css/site.css">
@@ -57,7 +62,10 @@
       <li><a class="sidebar-link" href="#features" data-anchor="features"><i class="bi bi-gem"></i><span>Platform</span></a></li>
       <li><a class="sidebar-link" href="#faq" data-anchor="faq"><i class="bi bi-question-circle-fill"></i><span>FAQ</span></a></li>
     </ul>
-    <a href="https://chat.whatsapp.com/FtUufv24bmYJj65jos58C8" class="sidebar-footer mt-auto" target="_blank" rel="noopener noreferrer" aria-label="Gabung grup WhatsApp"><span>Grup WhatsApp</span><i class="bi bi-whatsapp"></i></a>
+    <div class="sidebar-bottom mt-auto">
+      <p class="install-hint" id="installHint" role="status" hidden></p>
+      <button type="button" class="sidebar-footer" id="installBtn" aria-label="Pasang aplikasi Zeta Download"><span>Pasang aplikasi</span><i class="bi bi-android2"></i></button>
+    </div>
   </div>
 </div>
 

@@ -254,3 +254,33 @@ function showResult({ data: d }) {
   loadStats()
   results.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+/* ---------- pasang aplikasi (PWA) ---------- */
+{
+  const btn = $('#installBtn'), note = $('#installHint')
+  const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+  const say = t => { note.textContent = t; note.hidden = !t }
+  const manual = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
+    ? 'Ketuk tombol Bagikan di Safari, lalu pilih Tambah ke Layar Utama.'
+    : 'Buka menu ⋮ di browser, lalu pilih Pasang aplikasi atau Tambahkan ke layar utama.'
+
+  if (standalone()) btn.hidden = true
+
+  btn.addEventListener('click', async () => {
+    const ev = window.__bip
+    if (!ev) return say(manual())
+    window.__bip = null
+    say('')
+    try {
+      ev.prompt()
+      const { outcome } = await ev.userChoice
+      if (outcome === 'accepted') { say('Memasang aplikasi…'); setTimeout(() => setMenu(false), 900) }
+      else say(manual())
+    } catch { say(manual()) }
+  })
+
+  addEventListener('appinstalled', () => { window.__bip = null; btn.hidden = true; say('Aplikasi terpasang. Cek layar utama kamu.'); setTimeout(() => say(''), 4000) })
+  matchMedia('(display-mode: standalone)').addEventListener?.('change', () => { if (standalone()) btn.hidden = true })
+
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
+}
