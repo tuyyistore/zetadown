@@ -41,9 +41,9 @@ $$('[data-anchor]').forEach(a => a.addEventListener('click', e => {
   e.preventDefault(); setMenu(false)
   document.getElementById(a.dataset.anchor)?.scrollIntoView({ behavior: 'smooth' })
 }))
-const ids = ['download', 'features', 'faq']
+const ids = ['download', 'stats', 'features', 'faq']
 const spy = () => {
-  let cur = ids[0]; for (const id of ids) { const el = document.getElementById(id); if (el && el.getBoundingClientRect().top < 140) cur = id }
+  let cur = ids[0]; for (const id of ids) { const el = document.getElementById(id); if (el && !el.hidden && el.getBoundingClientRect().top < 140) cur = id }
   $$('[data-anchor]').forEach(a => a.classList.toggle('router-link-exact-active', a.dataset.anchor === cur))
 }
 addEventListener('scroll', spy, { passive: true }); spy()
@@ -151,6 +151,34 @@ async function copyText(text) {
   } catch { return false }
 }
 
+/* ---------- statistik ---------- */
+const nf = new Intl.NumberFormat('id-ID')
+const dfShort = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+const dfLong = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+const utc = d => new Date(d + 'T00:00:00Z')
+const STAT_LABELS = [['today', 'Hari ini'], ['week', 'Minggu ini'], ['month', 'Bulan ini'], ['total', 'Total']]
+
+function renderStats(s) {
+  for (const k of ['usage', 'downloads']) {
+    $(`[data-stat="${k}"]`).innerHTML = STAT_LABELS.map(([f, l]) => `<div class="stat-tile"><div class="v">${nf.format(s[k][f])}</div><div class="l">${l}</div></div>`).join('')
+  }
+  const max = Math.max(1, ...s.daily.map(d => Math.max(d.use, d.dl)))
+  $('#statBars').innerHTML = s.daily.map((d, i) => `
+    <div class="sbar-col${i === s.daily.length - 1 ? ' today' : ''}" title="${dfShort.format(utc(d.date))}: ${nf.format(d.use)} penggunaan, ${nf.format(d.dl)} download">
+      <div class="sbar-pair"><span class="sbar u" style="height:${(d.use / max) * 100}%"></span><span class="sbar d" style="height:${(d.dl / max) * 100}%"></span></div>
+      <span class="sbar-label">${utc(d.date).getUTCDate()}</span>
+    </div>`).join('')
+  $('#statNote').innerHTML = `${s.since ? `Dihitung sejak ${esc(dfLong.format(utc(s.since)))} · ` : ''}Zona waktu ${esc(s.tz)} · pekan dimulai hari Senin. Penggunaan = link/judul yang berhasil diproses; download = tombol Download ditekan.`
+    + (s.persistent ? '' : '<span class="stat-warn">Data masih disimpan di memori server dan akan hilang saat server restart. Hubungkan Upstash Redis agar statistik permanen.</span>')
+  $('#stats').hidden = false
+  $$('[data-anchor="stats"]').forEach(a => { a.parentElement.hidden = false })
+  spy()
+}
+async function loadStats() {
+  try { const j = await (await fetch('/api/stats')).json(); if (j.status) renderStats(j) } catch {}
+}
+loadStats()
+
 const ICON = { video: 'bi-film', audio: 'bi-music-note-beamed', image: 'bi-image', file: 'bi-file-earmark-arrow-down' }
 
 function showResult({ data: d }) {
@@ -187,5 +215,7 @@ function showResult({ data: d }) {
     clearTimeout(cb._t)
     cb._t = setTimeout(() => { lbl.textContent = 'Salin deskripsi'; ic.className = 'bi bi-clipboard me-1'; cb.classList.remove('copied') }, 1800)
   }
+  $$('#results a[download]').forEach(x => x.addEventListener('click', () => setTimeout(loadStats, 1500)))
+  loadStats()
   results.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }

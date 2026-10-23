@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import http from 'node:http'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { buildServer } from '../src/zeta.js'
+import { dayKey, summarize, createStats, createStore, memoryStore, fileStore, redisStore } from '../src/stats.js'
+const memStats = () => createStats({ store: memoryStore() }) // jangan menulis data/stats.json saat tes
 import { detectService, createApi, resolve, sign, verify } from '../src/core.js'
 
 // --- file host tiruan (mendukung Range) ---
@@ -36,7 +41,7 @@ const fx = {
 const apiFn = async (ep, p) => { calls.push([ep, p]); return fx[ep](p) }
 
 const SECRET = 'test-secret-test-secret'
-const srv = buildServer({ apiFn, secret: SECRET, limit: 1000 })
+const srv = buildServer({ apiFn, secret: SECRET, limit: 1000, stats: memStats() })
 await new Promise(r => srv.listen(0, r))
 const B = `http://127.0.0.1:${srv.address().port}`
 const get = async (p, init) => { const r = await fetch(B + p, init); const t = await r.text(); let j; try { j = JSON.parse(t) } catch {} return { r, j, t } }
@@ -154,7 +159,7 @@ ok('static + path traversal diblok')
 ;({ j } = await get('/api/services')); assert.ok(j.services.length >= 20); assert.ok(!j.services.some(s => s.id === 'play')); ok(`/api/services (${j.services.length} platform)`)
 
 // rate limit
-const rl = buildServer({ apiFn, secret: SECRET, limit: 3 }); await new Promise(r => rl.listen(0, r))
+const rl = buildServer({ apiFn, secret: SECRET, limit: 3, stats: memStats() }); await new Promise(r => rl.listen(0, r))
 const codes = []; for (let i = 0; i < 5; i++) codes.push((await fetch(`http://127.0.0.1:${rl.address().port}/api/search?type=play&q=a`)).status)
 assert.deepEqual(codes, [200, 200, 200, 429, 429]); ok('rate limit 429')
 
@@ -192,11 +197,91 @@ assert.equal(seen, 'https://api.neoxr.eu/api/tiktok?url=https%3A%2F%2Fx%2F%3Fa%3
 }
 
 // mode redirect (Vercel)
-const rd = buildServer({ apiFn, secret: SECRET, limit: 1000, fileMode: 'redirect' }); await new Promise(r => rd.listen(0, r))
+const rd = buildServer({ apiFn, secret: SECRET, limit: 1000, fileMode: 'redirect', stats: memStats() }); await new Promise(r => rd.listen(0, r))
 const RB = `http://127.0.0.1:${rd.address().port}`
 const rj = await (await fetch(RB + '/api/resolve?url=' + encodeURIComponent('https://vm.tiktok.com/ZS/'))).json()
 const rr = await fetch(RB + rj.data.items[0].download, { redirect: 'manual' })
 assert.equal(rr.status, 302); assert.equal(rr.headers.get('location'), `${F}/v.mp4`)
 assert.equal((await fetch(RB + '/api/file?t=bad', { redirect: 'manual' })).status, 403); ok('mode redirect (Vercel): 302 ke sumber, token tetap divalidasi')
+
+
+// ---------- statistik ----------
+{
+  // dayKey mengikuti zona waktu (WIB = UTC+7), zona salah → UTC
+  assert.equal(dayKey(Date.UTC(2026, 9, 23, 18, 0), 'Asia/Jakarta'), '2026-10-24')
+  assert.equal(dayKey(Date.UTC(2026, 9, 23, 18, 0), 'UTC'), '2026-10-23')
+  assert.equal(dayKey(Date.UTC(2026, 9, 23, 18, 0), 'Zona/Salah'), '2026-10-23')
+
+  // summarize: minggu mulai Senin, bulan mulai tgl 1
+  const all = { 'u:2026-10-19': 1, 'u:2026-10-22': 2, 'u:2026-10-23': 4, 'u:2026-10-18': 100, 'u:2026-09-30': 50, 'u:total': 157, 'd:2026-10-23': 3, 'd:total': 9 }
+  const s1 = summarize(all, '2026-10-23') // Jumat
+  assert.deepEqual(s1.usage, { today: 4, week: 7, month: 107, total: 157 })
+  assert.deepEqual(s1.downloads, { today: 3, week: 3, month: 3, total: 9 })
+  assert.equal(s1.daily.length, 14); assert.equal(s1.daily[0].date, '2026-10-10'); assert.equal(s1.daily.at(-1).date, '2026-10-23')
+  assert.equal(s1.since, '2026-09-30')
+  const s2 = summarize({ 'u:2026-10-26': 5, 'u:2026-10-31': 2, 'u:2026-11-01': 1 }, '2026-11-01') // Minggu: pekan lintas bulan
+  assert.equal(s2.usage.week, 8); assert.equal(s2.usage.month, 1)
+  assert.equal(summarize({}, '2026-10-23').since, null)
+  ok('statistik: zona waktu, minggu (Senin) & bulan, lintas bulan')
+
+  // integrasi server (jam tetap 12:00 WIB)
+  const st = createStats({ store: memoryStore(), now: () => Date.UTC(2026, 9, 23, 5, 0) })
+  const sv = buildServer({ apiFn, secret: SECRET, limit: 1000, stats: st }); await new Promise(r => sv.listen(0, r))
+  const SB = `http://127.0.0.1:${sv.address().port}`
+  const stat = async () => (await fetch(SB + '/api/stats')).json()
+  const t0 = await stat()
+  assert.equal(t0.status, true); assert.equal(t0.usage.total, 0); assert.equal(t0.storage, 'memory'); assert.equal(t0.persistent, false); assert.equal(t0.tz, 'Asia/Jakarta')
+  const rs = await (await fetch(SB + '/api/resolve?url=' + encodeURIComponent('https://vm.tiktok.com/ZS/'))).json()
+  const dl = SB + rs.data.items[0].download
+  assert.equal((await stat()).usage.today, 1)
+  assert.equal((await fetch(SB + '/api/resolve?url=' + encodeURIComponent('https://drive.google.com/file/d/1/view'))).status, 502)
+  assert.equal((await stat()).usage.total, 1) // resolve gagal tidak dihitung
+  await (await fetch(dl)).arrayBuffer()
+  assert.equal((await stat()).downloads.today, 1) // download biasa dihitung
+  await (await fetch(dl + '&inline=1')).arrayBuffer() // preview
+  await (await fetch(dl, { headers: { range: 'bytes=5-' } })).arrayBuffer() // lanjutan Range
+  await fetch(dl, { method: 'HEAD' })
+  await fetch(SB + '/api/file?t=bad')
+  assert.equal((await stat()).downloads.total, 1) // semuanya tidak dihitung
+  await (await fetch(dl, { headers: { range: 'bytes=0-' } })).arrayBuffer() // Range dari awal = unduhan normal
+  const t1 = await stat()
+  assert.equal(t1.downloads.week, 2); assert.equal(t1.usage.month, 1); assert.equal(t1.daily.at(-1).dl, 2); assert.equal(t1.daily.at(-1).use, 1)
+  assert.ok(!JSON.stringify(t1).includes('apikey') && !JSON.stringify(t1).includes('http'))
+  const sr = buildServer({ apiFn, secret: SECRET, limit: 1000, fileMode: 'redirect', stats: st }); await new Promise(r => sr.listen(0, r))
+  assert.equal((await fetch(`http://127.0.0.1:${sr.address().port}` + rs.data.items[0].download, { redirect: 'manual' })).status, 302)
+  assert.equal((await stat()).downloads.total, 3) // mode redirect ikut dihitung
+  ok('statistik: /api/stats — hanya resolve sukses & download asli yang dihitung')
+
+  // Redis REST (fetch tiruan): bentuk request + parsing HGETALL
+  const reqs = []
+  const fakeFetch = async (u, init) => {
+    const body = JSON.parse(init.body); reqs.push([String(u), init.headers.authorization, body])
+    return { ok: true, status: 200, json: async () => (String(u).endsWith('/pipeline') ? body.map(() => ({ result: 1 })) : { result: ['u:2026-10-23', '3', 'u:total', '10'] }) }
+  }
+  const rst = createStats({ store: redisStore({ url: 'https://x.upstash.io/', token: 'TKN', fetchImpl: fakeFetch }), now: () => Date.UTC(2026, 9, 23, 5) })
+  await rst.hit('u')
+  assert.equal(reqs[0][0], 'https://x.upstash.io/pipeline'); assert.equal(reqs[0][1], 'Bearer TKN')
+  assert.deepEqual(reqs[0][2], [['HINCRBY', 'zeta:stats', 'u:2026-10-23', 1], ['HINCRBY', 'zeta:stats', 'u:total', 1]])
+  const rr2 = await rst.read()
+  assert.equal(reqs[1][0], 'https://x.upstash.io'); assert.deepEqual(reqs[1][2], ['HGETALL', 'zeta:stats'])
+  assert.equal(rr2.usage.today, 3); assert.equal(rr2.usage.total, 10); assert.equal(rr2.storage, 'redis'); assert.equal(rr2.persistent, true)
+  // Redis error: hit() tidak melempar (statistik tak boleh merusak aplikasi), read() melempar → API 503
+  const bad = createStats({ store: redisStore({ url: 'https://x', token: 't', fetchImpl: async () => ({ ok: false, status: 500, json: async () => ({ error: 'ERR boom' }) }) }) })
+  const quiet = console.error; console.error = () => {}
+  await bad.hit('u'); console.error = quiet
+  await assert.rejects(() => bad.read())
+  const sv2 = buildServer({ apiFn, secret: SECRET, limit: 1000, stats: bad }); await new Promise(r => sv2.listen(0, r))
+  console.error = () => {}; const e503 = await fetch(`http://127.0.0.1:${sv2.address().port}/api/stats`); console.error = quiet
+  assert.equal(e503.status, 503)
+  // pemilihan storage dari env
+  assert.equal(createStore({ UPSTASH_REDIS_REST_URL: 'https://a', UPSTASH_REDIS_REST_TOKEN: 't' }).kind, 'redis')
+  assert.equal(createStore({ KV_REST_API_URL: 'https://a', KV_REST_API_TOKEN: 't' }).kind, 'redis')
+  assert.equal(createStore({ VERCEL: '1' }).kind, 'memory')
+  // file store: tersimpan lalu terbaca ulang
+  const tmp = path.join(os.tmpdir(), `zeta-stats-${process.pid}.json`)
+  const f1 = fileStore(tmp); await f1.incr(['u:total']); await f1.incr(['u:total', 'u:2026-10-23']); f1.flush()
+  const back = await fileStore(tmp).all(); assert.equal(back['u:total'], 2); assert.equal(back['u:2026-10-23'], 1); fs.rmSync(tmp)
+  ok('statistik: Redis REST, error tidak merusak app, pilihan storage, file store')
+}
 
 console.log('\nSemua tes lulus'); process.exit(0)

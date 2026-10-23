@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
 import { SERVICES, SEARCHES, detectService, createApi, resolve, search, sign, verify, safeName } from './core.js'
+import { createStats } from './stats.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
@@ -27,7 +28,8 @@ const json = (res, code, body) => { res.writeHead(code, { 'content-type': 'appli
 // FILE_MODE: 'proxy' (stream lewat server, VPS) | 'redirect' (302 ke sumber, otomatis di Vercel)
 const FILE_MODE = process.env.FILE_MODE || (process.env.VERCEL ? 'redirect' : 'proxy')
 
-export function buildServer({ apiFn, fetchImpl = fetch, secret = SECRET, limit = LIMIT, fileMode = FILE_MODE } = {}) {
+export function buildServer({ apiFn, stats, fetchImpl = fetch, secret = SECRET, limit = LIMIT, fileMode = FILE_MODE } = {}) {
+  stats ||= createStats({ tz: process.env.STATS_TZ || 'Asia/Jakarta' })
   const DEFAULT_BASE = 'https://api.neoxr.eu/api'
   const apiBase = process.env.NEOXR_BASE || DEFAULT_BASE
   // cadangan: .my.id (dipakai bot lama). Bisa diubah/dimatikan lewat NEOXR_FALLBACK (isi "off" untuk mematikan).
@@ -65,6 +67,11 @@ export function buildServer({ apiFn, fetchImpl = fetch, secret = SECRET, limit =
     }
     if (limited(clientIp(req))) return json(res, 429, { status: false, msg: 'Terlalu banyak permintaan, coba lagi sebentar.' })
 
+    if (u.pathname === '/api/stats') {
+      try { return json(res, 200, { status: true, ...(await stats.read()) }) }
+      catch (e) { console.error('[stats] gagal membaca:', e.message); return json(res, 503, { status: false, msg: 'Statistik belum tersedia' }) }
+    }
+
     if (u.pathname === '/api/resolve') {
       const url = q.get('url'), query = q.get('q'), no = q.get('no')
       let service = q.get('service')
@@ -79,6 +86,7 @@ export function buildServer({ apiFn, fetchImpl = fetch, secret = SECRET, limit =
       if (svc.detect && !url) return json(res, 400, { status: false, msg: 'Parameter url wajib' })
       if (!svc.detect && !query) return json(res, 400, { status: false, msg: 'Parameter q wajib' })
       const data = withLinks(await resolve(apiFn, service, { url: url?.slice(0, 2000), q: query?.slice(0, 200), no: no ? Number(no) : undefined }))
+      await stats.hit('u')
       return json(res, 200, { status: true, data })
     }
 
@@ -91,6 +99,8 @@ export function buildServer({ apiFn, fetchImpl = fetch, secret = SECRET, limit =
     if (u.pathname === '/api/file') {
       const p = verify(secret, q.get('t'))
       if (!p) return json(res, 403, { status: false, msg: 'Link kedaluwarsa, ulangi proses.' })
+      const range = req.headers.range
+      if (!q.get('inline') && req.method === 'GET' && (!range || /^bytes=0-/.test(range))) await stats.hit('d')
       if (fileMode === 'redirect') { res.writeHead(302, { location: p.u, 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer' }); return res.end() }
       const headers = { 'user-agent': 'Mozilla/5.0' }
       if (p.r) headers.referer = p.r
